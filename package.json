@@ -1,0 +1,19 @@
+{
+  "name": "habit-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Phone-first habit tracker PWA with journals, time-of-day slots, streak insights and push reminders",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "vapid": "node scripts/gen-vapid.js",
+    "icons": "node scripts/gen-icons.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "express": "^4.21.0",
+    "web-push": "^3.6.7"
+  }
+}
