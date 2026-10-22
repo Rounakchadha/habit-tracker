@@ -109,3 +109,62 @@ h2{font-size:22px;margin:2px 0 0}
 
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#fff;color:#000;padding:10px 16px;border-radius:99px;font-size:14px;z-index:20;max-width:90vw}
 .login{margin-top:30vh;text-align:center}
+
+/* ===== v2 calmer layout ===== */
+main{padding-top:22px}
+h2{font-size:28px;letter-spacing:-.02em}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.pill{font-size:13px;padding:8px 14px;border-radius:99px;background:var(--card2);color:var(--green)}
+.link{font-size:13px;color:var(--mute);padding:4px 2px}
+
+.strip{display:flex;justify-content:space-between;gap:6px;margin-top:18px}
+.day{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 0;border-radius:14px;color:var(--mute);background:transparent}
+.day small{font-size:11px;letter-spacing:.06em}
+.day b{font-size:16px;font-weight:600;color:var(--text)}
+.day.sel{background:var(--card2);outline:1px solid var(--green)}
+.day.sel b{color:var(--green)}
+.day.is-today:not(.sel) b{color:var(--green)}
+
+.ringcard{gap:22px;padding:22px;margin-top:18px}
+.ring{width:112px;height:112px}
+.ring .pct{font-size:30px}
+.ring .pct small{font-size:15px;opacity:.7}
+.big2{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin-bottom:4px}
+
+.coach{display:block;width:100%;text-align:left;margin-top:14px;padding:14px 16px;line-height:1.45}
+.coach .small{letter-spacing:.12em;font-size:11px}
+
+.chips{margin-top:18px}
+.chip{background:transparent;border:1px solid var(--line);color:var(--mute);padding:8px 14px}
+.chip.on{background:rgba(22,236,6,.1);border-color:var(--green);color:var(--green)}
+
+.scard{background:var(--card);border-radius:20px;margin-bottom:12px;overflow:hidden;border:1px solid transparent}
+.scard.cur{border-color:#2d3a2d}
+.shead{display:flex;align-items:center;gap:14px;width:100%;padding:16px;text-align:left}
+.sicon{font-size:24px;width:32px;text-align:center}
+.shead .name{font-weight:650;font-size:17px}
+.shead .now{margin-left:8px;font-size:10px;letter-spacing:.1em;color:#000;background:var(--green);padding:2px 7px;border-radius:99px;font-weight:700;vertical-align:2px}
+.mini{width:44px;height:5px;border-radius:9px;background:var(--card2);overflow:hidden;flex:none}
+.mini i{display:block;height:100%;background:var(--green);border-radius:9px}
+.chev{color:var(--mute);width:14px;flex:none}
+.sbody{padding:0 8px 8px}
+
+.task{display:flex;align-items:center;gap:14px;background:none;border-radius:14px;padding:12px 8px;margin:0;border-top:1px solid var(--line)}
+.task.done,.task.skipped{background:none}
+.task .title{font-size:16px}
+.task.done .title{color:var(--mute);text-decoration:line-through}
+.task.skipped .title{color:var(--mute)}
+.meta{display:block;margin-top:2px;font-size:12px}
+.meta .bad{color:var(--red)} .meta .hot{color:var(--yellow)}
+.check{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid #3a3c45;display:grid;place-items:center;font-size:16px;font-weight:800;color:#000;transition:all .12s}
+.check:active{transform:scale(.88)}
+.check.done{background:var(--green);border-color:var(--green)}
+.check.skipped{background:var(--red);border-color:var(--red);color:#fff}
+.skip{flex:none;width:34px;height:34px;border-radius:50%;color:#5d6069;font-size:15px}
+.skip.on{color:var(--red)}
+.addrow{width:100%;text-align:left;padding:14px 8px 8px;color:var(--green);font-size:15px;border-top:1px solid var(--line)}
+
+.welcome{background:linear-gradient(160deg,#10200f,#121316);border:1px solid #1f3a1d;border-radius:20px;padding:18px;margin-bottom:18px;font-size:15px}
+.welcome ul{margin:10px 0 0;padding-left:18px;display:grid;gap:8px;color:#cfd2d9}
+.card{padding:18px}
+h1{margin-bottom:2px}

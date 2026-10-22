@@ -121,73 +121,102 @@ function render() {
 
 // ---------- TODAY ----------
 const ringColor = p => (p >= 67 ? 'var(--green)' : p >= 34 ? 'var(--yellow)' : 'var(--red)');
-function ring(pct, label) {
-  const R = 56, C = 2 * Math.PI * R;
-  return `<div class="ring"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="${R}" stroke="#25262c" stroke-width="11" fill="none"/>
-    <circle cx="66" cy="66" r="${R}" stroke="${ringColor(pct)}" stroke-width="11" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct / 100)}" style="transition:stroke-dashoffset .5s"/></svg>
-    <div class="c"><div class="pct" style="color:${ringColor(pct)}">${pct}%</div><div class="lbl">${label}</div></div></div>`;
+function ring(pct, label = '') {
+  const R = 46, C = 2 * Math.PI * R;
+  return `<div class="ring"><svg width="112" height="112" viewBox="0 0 112 112"><circle cx="56" cy="56" r="${R}" stroke="#22232a" stroke-width="10" fill="none"/>
+    <circle cx="56" cy="56" r="${R}" stroke="${ringColor(pct)}" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct / 100)}" style="transition:stroke-dashoffset .5s"/></svg>
+    <div class="c"><div class="pct" style="color:${ringColor(pct)}">${pct}<small>%</small></div>${label ? `<div class="lbl">${label}</div>` : ''}</div></div>`;
 }
+
+const SLOT_ICON = { wake: '🌅', morning: '☀️', afternoon: '🌤️', evening: '🌆', night: '🌙', bed: '🛏️' };
+const greeting = h => (h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night');
+const shortDate = s => parseD(s).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 function renderToday() {
   const { date, tasks } = S.day, today = S.cfg.today;
   const isToday = date === today, isPast = date < today;
+  if (S.openDate !== date) { S.openDate = date; S.open = isToday ? { [currentSlot()]: true } : {}; }
   const list = tasks.filter(t => S.filter === 'all' || t.journal_id === +S.filter);
   const done = list.filter(t => t.status === 'done').length;
-  const crossed = list.filter(t => t.status === 'skipped').length;
-  const pending = list.length - done - crossed;
-  const notDone = crossed + (isPast ? pending : 0);
+  const skipped = list.filter(t => t.status === 'skipped').length;
+  const left = list.length - done - skipped;
   const pct = list.length ? Math.round(100 * done / list.length) : 0;
   const hab = Object.fromEntries(S.insights.habits.map(h => [h.id, h]));
   const jmap = Object.fromEntries(S.journals.map(j => [j.id, j]));
   const now = tzParts();
-  const rel = isToday ? 'Today' : date === addDays(today, -1) ? 'Yesterday' : date === addDays(today, 1) ? 'Tomorrow' : isPast ? 'Past' : 'Upcoming';
 
-  let html = `<div class="top"><button class="nav" data-d="-1">‹</button>
-    <div class="sp" style="text-align:center"><h1>${isToday ? `${t12(`${pad(now.h)}:${pad(now.m)}`)}` : rel}</h1><h2>${nice(date)}</h2></div>
-    <button class="nav" data-d="1">›</button></div>
-    <div style="text-align:center;margin-top:6px">${isToday ? '<span class="today-pill live">● LIVE · auto-updates</span>' : `<button class="today-pill" id="gotoday">↩ Back to today</button>`}</div>
-    <div class="card ringcard">${ring(pct, 'COMPLETE')}<div class="stats">
-      <div class="stat"><b style="color:var(--green)">${done}</b><span>Done</span></div>
-      <div class="stat"><b style="color:var(--red)">${notDone}</b><span>${isPast ? 'Missed' : 'Crossed'}</span></div>
-      <div class="stat"><b>${isPast ? 0 : pending}</b><span>Pending</span></div></div></div>`;
+  const headline = !list.length ? 'No tasks yet' : left === 0 && !isPast ? 'All done 🎉' : `${done} of ${list.length} done`;
+  const sub = !list.length ? 'Add your first task below' : isPast ? `${skipped + left} missed` : `${left} left${skipped ? ` · ${skipped} skipped` : ''}`;
 
-  if (isToday) for (const c of S.insights.coach.slice(0, 2)) html += `<div class="coach ${c.level}">${esc(c.text)}</div>`;
+  let html = '';
+  if (!store.get('welcomed')) html += `<div class="welcome"><b>Welcome 👋 Here's how this works</b>
+    <ul><li>Your day is split into parts — morning, afternoon, evening and so on. <b>Tap a part to open it.</b></li>
+    <li><b>Tap the circle</b> when you've done a task. Tap <b>✕</b> if you skipped it.</li>
+    <li>Use the <b>+ Add task</b> button inside any part to add things. Organise them into <b>Journals</b> (tab below).</li>
+    <li>The ring at the top shows how your day is going. <b>Insights</b> shows streaks.</li></ul>
+    <button class="btn" id="gotit" style="margin-top:12px">Got it</button></div>`;
+
+  html += `<div class="head"><div><div class="mute small">${isToday ? greeting(now.h) : isPast ? 'Looking back' : 'Planning ahead'}</div><h2>${shortDate(date)}</h2></div>
+    ${isToday ? '' : '<button class="pill" id="gotoday">Back to today</button>'}</div>
+    <div class="strip">${[-3, -2, -1, 0, 1, 2, 3].map(i => { const d = addDays(date, i); return `<button class="day ${i === 0 ? 'sel' : ''} ${d === today ? 'is-today' : ''}" data-day="${d}"><small>${DAYN[dowOf(d)]}</small><b>${+d.slice(8)}</b></button>`; }).join('')}</div>
+
+    <div class="card ringcard">${ring(pct)}<div><div class="big2">${headline}</div><div class="mute">${sub}</div></div></div>`;
+
+  if (isToday && S.filter === 'all' && S.insights.coach[0]) {
+    const c = S.insights.coach[0];
+    html += `<button class="coach ${c.level}" id="coach"><span class="small mute">${c.level === 'warn' ? 'FOCUS TODAY' : 'NOTE'}</span><br>${esc(c.text)}</button>`;
+  }
 
   html += `<div class="chips"><button class="chip ${S.filter === 'all' ? 'on' : ''}" data-f="all">All</button>${S.journals.map(j => `<button class="chip ${S.filter == j.id ? 'on' : ''}" data-f="${j.id}">${esc(j.icon)} ${esc(j.name)}</button>`).join('')}</div>`;
 
   const cur = isToday ? currentSlot() : null;
+  const anyOpen = S.cfg.slots.some(sl => S.open[sl.key]);
+  html += `<div class="row" style="margin:18px 2px 8px"><h1 class="sp">Your day</h1><button class="link" id="toggleall">${anyOpen ? 'Collapse all' : 'Expand all'}</button></div>`;
+
   for (const sl of S.cfg.slots) {
     const items = list.filter(t => t.slot === sl.key).sort((a, b) => (a.time || sl.defaultTime).localeCompare(b.time || sl.defaultTime));
-    html += `<section class="slot"><div class="slot-h"><span class="name">${sl.label}</span>${cur === sl.key ? '<span class="now">NOW</span>' : ''}
-      <span class="mute small sp">${items.length ? `${items.filter(t => t.status === 'done').length}/${items.length}` : ''}</span>
-      <button class="add" data-add="${sl.key}" aria-label="Add task to ${sl.label}">+</button></div>`;
-    html += items.length ? items.map(t => {
-      const h = hab[t.id] || {}, j = jmap[t.journal_id] || {};
-      const tags = [`<span class="tag">${esc(j.icon)} ${esc(j.name)}</span>`];
-      if (t.time) tags.push(`<span class="tag">⏰ ${t12(t.time)}</span>`);
-      if (h.missedRun >= 2) tags.push(`<span class="tag bad">missed ${h.missedRun}d in a row</span>`);
-      else if (h.streak >= 2) tags.push(`<span class="tag hot">🔥 ${h.streak}d</span>`);
-      const quit = j.kind === 'quit';
-      return `<div class="task ${t.status || ''}"><button class="t" data-edit="${t.id}"><div class="title">${esc(t.title)}</div><div class="meta">${tags.join('')}</div></button>
-        <button class="act x ${t.status === 'skipped' ? 'on' : ''}" data-log="${t.id}" data-s="skipped" aria-label="${quit ? 'Slipped' : 'Skip'}">✕</button>
-        <button class="act ok ${t.status === 'done' ? 'on' : ''}" data-log="${t.id}" data-s="done" aria-label="Done">✓</button></div>`;
-    }).join('') : `<div class="empty">Nothing here · tap + to add</div>`;
+    const d = items.filter(t => t.status === 'done').length, open = !!S.open[sl.key];
+    const full = items.length && d === items.length;
+    html += `<section class="scard ${open ? 'open' : ''} ${cur === sl.key ? 'cur' : ''}">
+      <button class="shead" data-slot="${sl.key}"><span class="sicon">${SLOT_ICON[sl.key]}</span>
+        <span class="sp"><span class="name">${sl.label}</span>${cur === sl.key ? '<span class="now">NOW</span>' : ''}
+        <span class="mute small" style="display:block">${items.length ? (full ? 'All done ✓' : `${d} of ${items.length} done`) : 'No tasks'}</span></span>
+        ${items.length ? `<span class="mini"><i style="width:${Math.round(100 * d / items.length)}%"></i></span>` : ''}<span class="chev">${open ? '▾' : '▸'}</span></button>`;
+    if (open) {
+      html += `<div class="sbody">` + items.map(t => {
+        const h = hab[t.id] || {}, j = jmap[t.journal_id] || {};
+        const bits = [];
+        if (S.filter === 'all') bits.push(`${esc(j.icon)} ${esc(j.name)}`);
+        if (t.time) bits.push(t12(t.time));
+        const flag = h.missedRun >= 3 ? `<span class="bad">missed ${h.missedRun}d</span>` : h.streak >= 3 ? `<span class="hot">🔥 ${h.streak}d</span>` : '';
+        const quit = j.kind === 'quit';
+        return `<div class="task ${t.status || ''}">
+          <button class="check ${t.status || ''}" data-log="${t.id}" data-s="done" aria-label="Mark done">${t.status === 'done' ? '✓' : t.status === 'skipped' ? '✕' : ''}</button>
+          <button class="t" data-edit="${t.id}"><div class="title">${esc(t.title)}</div>
+            ${bits.length || flag ? `<div class="meta">${bits.join(' · ')}${bits.length && flag ? ' · ' : ''}${flag}</div>` : ''}</button>
+          <button class="skip ${t.status === 'skipped' ? 'on' : ''}" data-log="${t.id}" data-s="skipped" aria-label="${quit ? 'Slipped' : 'Skip'}">✕</button></div>`;
+      }).join('') + `<button class="addrow" data-add="${sl.key}">＋ Add task to ${sl.label.toLowerCase()}</button></div>`;
+    }
     html += `</section>`;
   }
   $('#view').innerHTML = html;
 
   const v = $('#view');
-  v.querySelectorAll('[data-d]').forEach(b => b.onclick = () => go(addDays(S.date, +b.dataset.d)));
+  if ($('#gotit')) $('#gotit').onclick = () => { store.set('welcomed', '1'); renderToday(); };
   if ($('#gotoday')) $('#gotoday').onclick = () => go(today);
+  if ($('#coach')) $('#coach').onclick = () => document.querySelector('[data-tab=insights]').click();
+  v.querySelectorAll('[data-day]').forEach(b => b.onclick = () => go(b.dataset.day));
   v.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderToday(); });
+  v.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { S.open[b.dataset.slot] = !S.open[b.dataset.slot]; renderToday(); });
+  $('#toggleall').onclick = () => { S.cfg.slots.forEach(sl => (S.open[sl.key] = !anyOpen)); renderToday(); };
   v.querySelectorAll('[data-add]').forEach(b => b.onclick = () => taskSheet({ slot: b.dataset.add }));
   v.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => taskSheet(S.allTasks.find(t => t.id === +b.dataset.edit)));
   v.querySelectorAll('[data-log]').forEach(b => b.onclick = () => setLog(+b.dataset.log, b.dataset.s));
 
   // swipe between days
   let x0 = null;
-  v.ontouchstart = e => (x0 = e.touches[0].clientX);
-  v.ontouchend = e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 90) go(addDays(S.date, dx < 0 ? 1 : -1)); };
+  v.ontouchstart = e => { x0 = e.touches[0].clientX; };
+  v.ontouchend = e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 100) go(addDays(S.date, dx < 0 ? 1 : -1)); };
 }
 
 async function go(date) { S.date = date; S.day = await api('/day?date=' + date); render(); }
