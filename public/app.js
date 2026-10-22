@@ -94,7 +94,7 @@ function showLogin() {
     } catch (e) { $('#err').textContent = "Can't reach server"; return; }
     store.set('pin', pin); $('#tabs').style.display = ''; init();
   };
-  $('#go').onclick = go; $('#pin').onkeydown = e => e.key === 'Enter' && go();
+  $('#go').onclick = go; $('#pin').onkeydown = e => { if (e.key === 'Enter') go(); };
   $('#showpin').onclick = () => { const i = $('#pin'); i.type = i.type === 'password' ? 'text' : 'password'; $('#showpin').textContent = i.type === 'password' ? '👁 Show PIN' : '🙈 Hide PIN'; };
   $('#pin').focus();
 }
